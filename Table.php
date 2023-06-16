@@ -1,56 +1,68 @@
 <?php
 class Table implements DatabaseWrapper {
-// вставляет новую запись в таблицу, возвращает полученный объект как массив
+    protected $table;
+    protected $columns;
+    protected $values;
+    protected $mysqli;
+    public function __construct() {
+        $this->mysqli = new mysqli("localhost", "username", "password", "database");
+    }
     public function insert(array $tableColumns, array $values): array {
-$sql = "INSERT INTO table ($tableColumns, $values)";
-      $result = $mysqli -> query($sql);
-      return $result;
+        $this->table = $this->tableName;
+        $this->columns = implode(',', $tableColumns);
+        $this->values = "'" . implode("','", $values) . "'";
+        $sql = "INSERT INTO {$this->table} ({$this->columns}) VALUES ({$this->values})";
+        $result = $this->mysqli->query($sql);
+        return $result;
     }
-   // редактирует строку под конкретным id, возвращает результат после изменения
     public function update(int $id, array $values): array {
-      $sql = "UPDATE table SET lastname='Doe' WHERE id=2";
-       $result = $mysqli -> query($sql);
-      return $result;
+        $this->table = $this->tableName;
+        $setValues = '';
+        foreach ($values as $column => $value) {
+            $setValues .= "$column = '$value',";
+        }
+        $setValues = rtrim($setValues, ',');
+        $sql = "UPDATE {$this->table} SET $setValues WHERE {$this->primaryKey} = $id";
+        $result = $this->mysqli->query($sql);
+        return $result;
     }
-    // поиск по id
     public function find(int $id): array {
-$sql = "SELECT FROM table WHERE $id";
-      $result = $mysqli -> query($sql);
-      return $result;
-      
+        $this->table = $this->tableName;
+        $sql = "SELECT * FROM {$this->table} WHERE {$this->primaryKey} = $id";
+        $result = $this->mysqli->query($sql);
+        return $result;
     }
-    // удаление по id
     public function delete(int $id): bool {
- $sql = "DELETE FROM table WHERE $id";
-      $result = $mysqli -> query($sql);
-      return $result;
+        $this->table = $this->tableName;
+        $sql = "DELETE FROM {$this->table} WHERE {$this->primaryKey} = $id";
+        $result = $this->mysqli->query($sql);
+        return $result;
     }
 }
-
 class Shop extends Table {
-    $tableColumns = ['Id', 'name', 'adress'];
-    $primaryKey = 'Id';
-    $tableName = 'shop';
+    protected $tableName = 'shop';
+    protected $tableColumns = ['Id', 'name', 'adress'];
+    protected $primaryKey = 'Id';
 }
 class Product extends Table {
-    $tableColumns = ['Id', 'productId', 'name', 'price', 'counts'];
-    $primaryKey = 'Id';
-    $tableName = 'product';
+    protected $tableName = 'product';
+    protected $tableColumns = ['Id', 'productId', 'name', 'price', 'counts'];
+    protected $primaryKey = 'Id';
 }
 class Orders extends Table {
-    $tableColumns = ['Id', 'orderId', 'created_at'];
-    $primaryKey = 'Id';
-    $tableName = 'orders';
+    protected $tableName = 'orders';
+    protected $tableColumns = ['Id', 'orderId', 'created_at'];
+    protected $primaryKey = 'Id';
 }
 class Order_product extends Table {
-    $tableColumns = ['Id', 'orderId'];
-    $primaryKey = 'Id';
-    $tableName = 'order_product';
+    protected $tableName = 'order_product';
+    protected $tableColumns = ['Id', 'orderId'];
+    protected $primaryKey = 'Id';
 }
 class Client extends Table {
-    $tableColumns = ['Id', 'name', 'phone'];
-    $primaryKey = 'Id';
-    $tableName = 'client';
+    protected $tableName = 'client';
+    protected $tableColumns = ['Id', 'name', 'phone'];
+    protected $primaryKey = 'Id';
 }
 
 $shop = new Shop;

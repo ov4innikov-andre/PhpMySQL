@@ -1,19 +1,30 @@
 <?php
+function my_autoloader($class) {
+    include $class . '.php';
+}
+spl_autoload_register('my_autoloader');
+interface DatabaseWrapper
+{
+    public function insert(array $tableColumns, array $values): array;
+    public function update(int $id, array $values): array;
+    public function find(int $id): array;
+    public function delete(int $id): bool;
+}
 class Table implements DatabaseWrapper {
     protected $table;
-    protected $columns;
     protected $values;
-    protected $mysqli;
+    protected $pdo;
     public function __construct() {
-        $this->mysqli = new mysqli("localhost", "username", "password", "database");
+        $this->pdo = new PDO('sqlite:database.db');
+        $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     }
     public function insert(array $tableColumns, array $values): array {
         $this->table = $this->tableName;
         $this->columns = implode(',', $tableColumns);
         $this->values = "'" . implode("','", $values) . "'";
         $sql = "INSERT INTO {$this->table} ({$this->columns}) VALUES ({$this->values})";
-        $result = $this->mysqli->query($sql);
-        return $result;
+        $result = $this->pdo->query($sql);
+        return $result->fetchAll(PDO::FETCH_ASSOC); 
     }
     public function update(int $id, array $values): array {
         $this->table = $this->tableName;
@@ -23,25 +34,25 @@ class Table implements DatabaseWrapper {
         }
         $setValues = rtrim($setValues, ',');
         $sql = "UPDATE {$this->table} SET $setValues WHERE {$this->primaryKey} = $id";
-        $result = $this->mysqli->query($sql);
-        return $result;
+        $result = $this->pdo->query($sql);
+        return $result->fetchAll(PDO::FETCH_ASSOC); 
     }
     public function find(int $id): array {
         $this->table = $this->tableName;
         $sql = "SELECT * FROM {$this->table} WHERE {$this->primaryKey} = $id";
-        $result = $this->mysqli->query($sql);
-        return $result;
+        $result = $this->pdo->query($sql);
+        return $result->fetchAll(PDO::FETCH_ASSOC); 
     }
     public function delete(int $id): bool {
         $this->table = $this->tableName;
         $sql = "DELETE FROM {$this->table} WHERE {$this->primaryKey} = $id";
-        $result = $this->mysqli->query($sql);
-        return $result;
+        $result = $this->pdo->query($sql);
+        return $result; 
     }
 }
 class Shop extends Table {
     protected $tableName = 'shop';
-    protected $tableColumns = ['Id', 'name', 'adress'];
+    protected $tableColumns = ['Id', 'name', 'address']; 
     protected $primaryKey = 'Id';
 }
 class Product extends Table {
@@ -64,9 +75,8 @@ class Client extends Table {
     protected $tableColumns = ['Id', 'name', 'phone'];
     protected $primaryKey = 'Id';
 }
-
 $shop = new Shop;
-$shop->insert(['name','adress'],['test name','test address']);
+$shop->insert(['name','address'],['test name','test address']);
 $shop->update(1, ['name'=>'new name']);
 $shop->find(2);
 $shop->delete(1);
